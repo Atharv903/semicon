@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speckle Denoising & 2x Super-Resolution Inspector</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0c10;
+            --card-bg: rgba(22, 27, 34, 0.75);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #38bdf8;
+            --accent-emerald: #10b981;
+            --accent-purple: #a855f7;
+            --accent-amber: #f59e0b;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.08) 0%, transparent 40%);
+        }
+
+        header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-badge {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: #000;
+            font-weight: 800;
+            font-size: 0.85rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(16px);
+            border-radius: 16px;
+            padding: 1.25rem 1.75rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, button {
+            font-family: inherit;
+            font-size: 0.9rem;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--text-main);
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        select:focus, button:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: #fff;
+            font-weight: 600;
+            border: none;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        /* Metrics HUD */
+        .metrics-hud {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .metric-card.psnr::before { background: var(--accent-emerald); }
+        .metric-card.ssim::before { background: var(--accent-cyan); }
+        .metric-card.boost::before { background: var(--accent-purple); }
+        .metric-card.latency::before { background: var(--accent-amber); }
+
+        .metric-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .metric-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Visual Inspection Grid */
+        .visual-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .image-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .image-card-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .tag-noisy { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .tag-model { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .tag-gt { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+
+        .image-wrapper {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        /* Split Slider Container */
+        .slider-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .split-slider-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1;
+            margin: 0 auto;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+            user-select: none;
+        }
+
+        .split-slider-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        .img-before {
+            z-index: 1;
+        }
+
+        .img-after-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 2;
+            border-right: 2px solid var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+
+        .img-after-overlay img {
+            width: 600px; /* match container width */
+            max-width: none;
+        }
+
+        .slider-handle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            z-index: 3;
+            cursor: ew-resize;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.8);
+        }
+
+        /* Spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--accent-cyan);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 900px) {
+            .visual-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-title">
+            <span class="logo-badge">SEMI-HACK AI</span>
+            <h1>Speckle Denoising & 2x Super-Resolution Live Inspector</h1>
+        </div>
+    </header>
+
+    <main>
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="control-group">
+                <label for="sample-select">Select Sample:</label>
+                <select id="sample-select">
+                    {% for file in sample_files %}
+                    <option value="{{ file }}">{{ file }}</option>
+                    {% endfor %}
+                </select>
+                <button id="btn-random">🎲 Random</button>
+            </div>
+
+            <div class="control-group">
+                <label for="model-select">Model Architecture:</label>
+                <select id="model-select">
+                    <option value="adair" selected>🔬 Pure AdaIR (ICLR 2025) - Wait for Weights</option>
+                    <option value="ada_naf_ep30">🔬 AdaFreq-NAFNet Ep30 (iter2.pth - 28.75 dB)</option>
+                    <option value="bicubic">Bicubic Baseline Only</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <div class="toggle-container">
+                    <input type="checkbox" id="tta-toggle" checked>
+                    <label for="tta-toggle" style="cursor:pointer;">8-Fold TTA</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="sharpness-slider">Detail Sharpening α:</label>
+                <input type="range" id="sharpness-slider" min="0.0" max="0.50" step="0.05" value="0.20" style="width: 100px;">
+                <span id="sharpness-val" style="font-family:'JetBrains Mono'; font-size:0.85rem; color:var(--accent-cyan);">0.20</span>
+            </div>
+
+            <div class="control-group">
+                <button class="btn-primary" id="btn-infer">
+                    <span>Run Denoising Inference</span>
+                    <div class="spinner" id="loader"></div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Metrics HUD -->
+        <div class="metrics-hud">
+            <div class="metric-card psnr">
+                <span class="metric-title">Model PSNR</span>
+                <span class="metric-value" id="val-psnr">-- dB</span>
+                <span class="metric-sub" id="sub-psnr">Peak Signal-to-Noise Ratio</span>
+            </div>
+            <div class="metric-card ssim">
+                <span class="metric-title">Structural Similarity (SSIM)</span>
+                <span class="metric-value" id="val-ssim">--</span>
+                <span class="metric-sub">Perceptual Edge Sharpening</span>
+            </div>
+            <div class="metric-card boost">
+                <span class="metric-title">PSNR Boost vs Bicubic</span>
+                <span class="metric-value" id="val-boost">+0.00 dB</span>
+                <span class="metric-sub" id="sub-bicubic">Bicubic Baseline: -- dB</span>
+            </div>
+            <div class="metric-card latency">
+                <span class="metric-title">Inference Latency</span>
+                <span class="metric-value" id="val-latency">-- ms</span>
+                <span class="metric-sub" id="sub-device">Real-time GPU execution</span>
+            </div>
+        </div>
+
+        <!-- Visual Inspection 3-Grid -->
+        <div class="visual-grid">
+            <div class="image-card">
+                <div class="image-card-header">
+                    <span class="card-tag tag-noisy">1. Noisy LR Input</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted);">128x128 (Bicubic 2x)</span>
+                </div>
+                <div class="image-wrapper">
+                    <img id="img-noisy" src="" alt="Noisy LR Input">
+                </div>
+            </div>
+
+            <div class="image-card">
+                <div class="image-card-header">
+                    <span class="card-tag tag-model">2. Denoised SR Output</span>
+                    <span style="font-size:0.75rem; color:var(--accent-emerald);" id="tag-model-name">Ensemble Model</span>
+                </div>
+                <div class="image-wrapper">
+                    <img id="img-denoised" src="" alt="Model Denoised Output">
+                </div>
+            </div>
+
+            <div class="image-card">
+                <div class="image-card-header">
+                    <span class="card-tag tag-gt">3. Ground Truth Target</span>
+                    <span style="font-size:0.75rem; color:var(--accent-cyan);">256x256 GT Clean</span>
+                </div>
+                <div class="image-wrapper">
+                    <img id="img-gt" src="" alt="Ground Truth Clean Target">
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Split Comparison Slider -->
+        <div class="slider-section">
+            <h2 style="font-size: 1.1rem; font-weight: 700;">Interactive Before / After Comparison Slider</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Drag the slider handle horizontally to compare the Noisy Input (Left) against the Model Denoised Output (Right).</p>
+            
+            <div class="split-slider-container" id="slider-box">
+                <!-- Underlay: Denoised Image -->
+                <img id="slider-after" src="" alt="Denoised">
+                
+                <!-- Overlay: Noisy Image clipped by slider -->
+                <div class="img-after-overlay" id="slider-overlay">
+                    <img id="slider-before" src="" alt="Noisy Input">
+                </div>
+
+                <div class="slider-handle" id="slider-handle">↔</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const sampleSelect = document.getElementById('sample-select');
+        const btnRandom = document.getElementById('btn-random');
+        const modelSelect = document.getElementById('model-select');
+        const ttaToggle = document.getElementById('tta-toggle');
+        const btnInfer = document.getElementById('btn-infer');
+        const loader = document.getElementById('loader');
+
+        const valPsnr = document.getElementById('val-psnr');
+        const valSsim = document.getElementById('val-ssim');
+        const valBoost = document.getElementById('val-boost');
+        const subBicubic = document.getElementById('sub-bicubic');
+        const valLatency = document.getElementById('val-latency');
+
+        const imgNoisy = document.getElementById('img-noisy');
+        const imgDenoised = document.getElementById('img-denoised');
+        const imgGt = document.getElementById('img-gt');
+
+        const sliderBefore = document.getElementById('slider-before');
+        const sliderAfter = document.getElementById('slider-after');
+        const sliderOverlay = document.getElementById('slider-overlay');
+        const sliderHandle = document.getElementById('slider-handle');
+        const sliderBox = document.getElementById('slider-box');
+
+        const sharpnessSlider = document.getElementById('sharpness-slider');
+        const sharpnessVal = document.getElementById('sharpness-val');
+
+        sharpnessSlider.addEventListener('input', () => {
+            sharpnessVal.textContent = sharpnessSlider.value;
+        });
+
+        async function runInference() {
+            const filename = sampleSelect.value;
+            const model = modelSelect.value;
+            const use_tta = ttaToggle.checked;
+            const sharpness = parseFloat(sharpnessSlider.value);
+
+            loader.style.display = 'inline-block';
+            btnInfer.disabled = true;
+
+            try {
+                const res = await fetch('/api/infer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename, model, use_tta, sharpness })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    valPsnr.textContent = `${data.psnr} dB`;
+                    valSsim.textContent = `${data.ssim}`;
+                    valBoost.textContent = `+${data.psnr_boost} dB`;
+                    subBicubic.textContent = `Bicubic Baseline: ${data.psnr_bicubic} dB`;
+                    valLatency.textContent = `${data.latency_ms} ms`;
+
+                    imgNoisy.src = data.img_noisy;
+                    imgDenoised.src = data.img_denoised;
+                    imgGt.src = data.img_gt;
+
+                    sliderBefore.src = data.img_noisy;
+                    sliderAfter.src = data.img_denoised;
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                loader.style.display = 'none';
+                btnInfer.disabled = false;
+            }
+        }
+
+        btnInfer.addEventListener('click', runInference);
+        sampleSelect.addEventListener('change', runInference);
+        modelSelect.addEventListener('change', runInference);
+        ttaToggle.addEventListener('change', runInference);
+        sharpnessSlider.addEventListener('change', runInference);
+
+        btnRandom.addEventListener('click', () => {
+            const options = sampleSelect.options;
+            const randomIdx = Math.floor(Math.random() * options.length);
+            sampleSelect.selectedIndex = randomIdx;
+            runInference();
+        });
+
+        // Interactive Split Slider Dragging Logic
+        let isDragging = false;
+
+        function updateSliderPosition(x) {
+            const rect = sliderBox.getBoundingClientRect();
+            let pos = ((x - rect.left) / rect.width) * 100;
+            pos = Math.max(0, Math.min(100, pos));
+            sliderOverlay.style.width = `${pos}%`;
+            sliderHandle.style.left = `${pos}%`;
+        }
+
+        sliderBox.addEventListener('mousedown', (e) => { isDragging = true; updateSliderPosition(e.clientX); });
+        window.addEventListener('mousemove', (e) => { if (isDragging) updateSliderPosition(e.clientX); });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+
+        // Initial Run
+        runInference();
+    </script>
+</body>
+</html>

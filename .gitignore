@@ -1,0 +1,26 @@
+# Exclude huge datasets, extra weights, and temporary outputs
+Dataset/
+inference_results/
+scratch/
+*.partial
+*.pptx
+*.pdf
+*.zip
+*.tar.gz
+*.7z
+
+# Ignore all extra intermediate .pth and random .npy files
+*.pth
+*.npy
+!parmanu/models/ADAHYPER.pth
+!restored_test_outputs/*.npy
+
+# Environment & System
+__pycache__/
+*.py[cod]
+.venv
+env/
+venv/
+.DS_Store
+.vscode/
+.idea/
