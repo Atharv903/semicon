@@ -1,10 +1,10 @@
-# 🔬 KLA Hackathon - AI-Based Restoration of Degraded Images
+#  KLA Hackathon - AI-Based Restoration of Degraded Images
 
-### 🏆 Team Name: `parmanu`
+###  Team Name: `parmanu`
 
 ---
 
-## 📌 Executive Summary & Key Results
+##  Executive Summary & Key Results
 
 Our solution employs **AdaIR** (*ICLR 2024*), an adaptive dual-domain transformer architecture engineered for joint noise removal and 2x super-resolution restoration of degraded semiconductor images.
 
@@ -19,11 +19,11 @@ Our solution employs **AdaIR** (*ICLR 2024*), an adaptive dual-domain transforme
 
 ---
 
-## 📁 Repository Structure & Required Deliverables Checklist
+##  Repository Structure & Required Deliverables Checklist
 
 ```text
 semicon/
-├── parmanu/                     # 🌟 Primary Official Submission Folder
+├── parmanu/                     #  Primary Official Submission Folder
 │   ├── run.py                   # Standalone Evaluation Script: python run.py <input-dir> <output-dir>
 │   ├── train.py                 # Standalone Training Script: python train.py --lr_dir <path> --gt_dir <path>
 │   ├── requirements.txt         # Dependencies with exact version specifications
@@ -31,12 +31,12 @@ semicon/
 │   └── models/
 │       ├── arch.py              # Self-contained AdaIR model architecture definition
 │       └── ADAHYPER.pth         # Final trained PyTorch model weights checkpoint (72.7MB)
-├── restored_test_outputs/       # 🖼️ Restored Output Files for all 400 test images (000000.npy - 000399.npy)
-├── notebooks/                   # 📓 Self-contained Training Notebooks for Google Colab / Kaggle
+├── restored_test_outputs/       #  Restored Output Files for all 400 test images (000000.npy - 000399.npy)
+├── notebooks/                   #  Self-contained Training Notebooks for Google Colab / Kaggle
 │   ├── Colab_HyperFast_BicubicAdaIR.ipynb
 │   ├── Colab_AdaIR_Optimized.ipynb
 │   └── Kaggle_AdaIR_Optimized.ipynb
-├── app/                         # 🖥️ Interactive Web Application for real-time visual inspection & benchmarking
+├── app/                         #  Interactive Web Application for real-time visual inspection & benchmarking
 │   ├── app.py
 │   └── templates/
 ├── run.py                       # Top-level runner alias calling parmanu/run.py
@@ -44,7 +44,7 @@ semicon/
 └── README.md                    # Project documentation & complete evaluation guide
 ```
 
-### ✅ Deliverables Verification:
+###  Deliverables Verification:
 1. **README.md**: Complete instructions to clone and run inference without manual edits or contacting the team.
 2. **Evaluation Script**: `parmanu/run.py` & `run.py` accepting `<input-dir>` and `<output-dir>`.
 3. **Training Script**: `parmanu/train.py` & `notebooks/Colab_HyperFast_BicubicAdaIR.ipynb`.
@@ -54,7 +54,7 @@ semicon/
 
 ---
 
-## ⚡ Quickstart: Setup & Installation
+##  Quickstart: Setup & Installation
 
 Clone the repository and install dependencies:
 
@@ -66,7 +66,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🚀 Running Inference (Evaluation Script)
+##  Running Inference (Evaluation Script)
 
 To run inference on any folder of degraded `.npy` files:
 
@@ -84,7 +84,7 @@ python run.py ./Dataset/NoisyLR ./Restored_Outputs
 
 ---
 
-## 🏋️ Reproducing Training (Training Script)
+##  Reproducing Training (Training Script)
 
 To train the AdaIR model from scratch:
 
@@ -96,7 +96,7 @@ Alternatively, open `notebooks/Colab_HyperFast_BicubicAdaIR.ipynb` directly in G
 
 ---
 
-## 🖥️ Interactive Web Application
+##  Interactive Web Application
 
 We built an interactive Flask web interface to visually inspect restorations side-by-side with ground truth images, benchmark PSNR/SSIM, and toggle TTA:
 
@@ -107,7 +107,7 @@ Open **`http://127.0.0.1:5000`** in your web browser.
 
 ---
 
-## 🧠 Model Architecture Overview: AdaIR
+##  Model Architecture Overview: AdaIR
 
 Our solution utilizes **AdaIR** (*ICLR 2024*), featuring:
 1. **Adaptive Frequency Learning Block (AFLB / FreModule)**: Subband frequency decomposition via Fast Fourier Transforms (FFT) to isolate high-frequency semiconductor edges from noise.
